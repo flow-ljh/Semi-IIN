@@ -22,27 +22,27 @@ class gate(nn.Module):
         return combined_x
     
 class CMFM(nn.Module):
-    def __init__(self, tune_params, args):
+    def __init__(self, params, args):
         super().__init__()
-        self.tp = tune_params
+        self.tp = params
         self.d_l = self.tp.get('hidden_dim')
         self.args = args
         self.sharing_num = self.tp['sharing_num']
         if args.inter != 'global':
-            self.cmfm1 = self.get_network(layers=1, num_heads=tune_params['t_num_heads'],attn_dropout=tune_params['t_attn_dropout'],
-                                        relu_dropout=tune_params['t_relu_dropout'],
-                                        res_dropout=tune_params['t_res_dropout'],inter=False)
-            self.cmfm2 = self.get_network(layers=1, num_heads=tune_params['t_num_heads'],attn_dropout=tune_params['t_attn_dropout'],
-                                        relu_dropout=tune_params['t_relu_dropout'],
-                                        res_dropout=tune_params['t_res_dropout'],inter=True)
+            self.cmfm1 = self.get_network(layers=1, num_heads=self.tp['t_num_heads'],attn_dropout=self.tp['t_attn_dropout'],
+                                        relu_dropout=self.tp['t_relu_dropout'],
+                                        res_dropout=self.tp['t_res_dropout'],inter=False)
+            self.cmfm2 = self.get_network(layers=1, num_heads=self.tp['t_num_heads'],attn_dropout=self.tp['t_attn_dropout'],
+                                        relu_dropout=self.tp['t_relu_dropout'],
+                                        res_dropout=self.tp['t_res_dropout'],inter=True)
             self.cmfm_intra = nn.ModuleList([self.cmfm1 for _ in range(self.sharing_num)])
             self.cmfm_inter = nn.ModuleList([self.cmfm2 for _ in range(self.sharing_num)])
             self.gate1 = gate(self.d_l)
             self.gate2 = gate(self.d_l)
         else:
-            self.cmfm1 = self.get_network(layers=1, num_heads=tune_params['t_num_heads'],attn_dropout=tune_params['t_attn_dropout'],
-                                        relu_dropout=tune_params['t_relu_dropout'],
-                                        res_dropout=tune_params['t_res_dropout'],inter='global')
+            self.cmfm1 = self.get_network(layers=1, num_heads=self.tp['t_num_heads'],attn_dropout=self.tp['t_attn_dropout'],
+                                        relu_dropout=self.tp['t_relu_dropout'],
+                                        res_dropout=self.tp['t_res_dropout'],inter='global')
             self.cmfm = nn.ModuleList([self.cmfm1 for _ in range(self.sharing_num)])
             
 
@@ -80,9 +80,9 @@ class CMFM(nn.Module):
         
 
         self.all_layers = []
-        layers = tune_params['layers']
+        layers = self.tp['layers']
         layers = list(map(lambda x: int(x), layers.split(',')))
-        input_dim = tune_params['hidden_dim']
+        input_dim = self.tp['hidden_dim']
         for i in range(0, len(layers)):
             self.all_layers.append(nn.Linear(input_dim, layers[i]))
             input_dim = layers[i]
@@ -169,29 +169,3 @@ class CMFM(nn.Module):
         p_emo = self.fc_out2(self.module(f_emo))
 
         return p_val,p_emo
-
-def main():
-    from thop import profile
-    from torchprofile import profile_macs
-    import argparse
-    tune_params = {
-                       'epoch': 30, 'train_bsz': 32, 'valid_bsz': 32, 'test_bsz': 32, 
-                       'lr': 0.0001, 'wd': 0.0001, 'hidden_dim': 128, 'layers': '128,64', 
-                       't_encoder_layer': 1, 'a_encoder_layer': 1, 'v_encoder_layer': 1, 
-                       't_num_heads': 4, 'a_num_heads': 4, 'v_num_heads': 4, 
-                       't_attn_dropout': 0.1, 'v_attn_dropout': 0.1, 'a_attn_dropout': 0.1, 
-                       't_relu_dropout': 0.2, 'a_relu_dropout': 0.2, 'v_relu_dropout': 0.2, 
-                       't_res_dropout': 0.2, 'a_res_dropout': 0.2, 'v_res_dropout': 0.2,
-                       'cls_r':0.4,'val_r':0.6, 'sharing_num':2
-        }
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--inter", type=str, default='global')
-    parser.add_argument("--use_bert", action='store_true')
-    args = parser.parse_args()
-    model = CMFM(tune_params,args).cuda()
-    dummy_audio, dummy_text,dummy_visual = torch.randn(1,800,1024).cuda(),torch.randn(1,100,1024).cuda(),torch.randn(1,50,256).cuda()
-    flops,params = profile(model,(dummy_visual,dummy_text,dummy_audio))
-    # macs = profile_macs(model,(dummy_visual,dummy_text,dummy_audio))
-    print('flops: %.2f G, params: %.2f M' % (flops / 1000000000.0, params / 1000000.0)) # G 代表10亿
-    # print(macs)
-# main()
