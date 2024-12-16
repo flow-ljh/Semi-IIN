@@ -1,5 +1,5 @@
 # Semi-IIN
-
+![pic-art-v2](../paper-pic/pic-art-v2.jpg)
 ## Environment setup
 
 1. create a new environment using conda or pip (We use Python 3.10.16)
