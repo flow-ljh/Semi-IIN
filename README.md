@@ -49,6 +49,7 @@ python code/run.py
   --dataset mosei
   --k 3236(for mosei, it is the size of ami dataset; for mosi, it is 40)
   --generate_pseudo(store true)
+
 Step 2: 
 python code/run.py
   --dataset mosei 
