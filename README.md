@@ -36,16 +36,23 @@ After that, you should move the data from ami to mosi/mosei data directory, resp
 
 ```bash
 python code/run.py 
-  --dataset mosi(default: mosi, option: [mosei, mosi]) 
-  --lab_num 1284(for mosei, it is 16326; for mosi, it is 1284)
+  --dataset mosei(default: mosi, option: [mosei, mosi]) 
+  --lab_num 16326(for mosei, it is 16326; for mosi, it is 1284)
+  --pretrain
 ```
 
 ## Train with MA && Self-training
 
 ```bash
+Step 1:
 python code/run.py
-  --dataset mosi 
+  --dataset mosei
+  --k 3236(for mosei, it is the size of ami dataset; for mosi, it is 40)
+  --generate_pseudo(store true)
+Step 2: 
+python code/run.py
+  --dataset mosei 
   --retrain(store true) 
-  --lab_num 1284(for mosei, it is 16326; for mosi, it is 1284)
+  --lab_num 16326(for mosei, it is 16326; for mosi, it is 1284)
 ```
 
